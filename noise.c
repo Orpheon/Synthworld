@@ -10,6 +10,8 @@
 #define lerp(a, b, t) (a + t*(b - a))
 #define print_point(a) (printf("(  %f  |  %f  |  %f  )", a.x, a.y, a.z))
 
+#define LACUNARITY 2.0f
+
 float noise(point query)
 {
     int i;
@@ -69,4 +71,44 @@ float noise(point query)
 int fold(point A)
 {
     return perm_table[perm_table[perm_table[(int)A.x % 254] + (int)A.y % 254] + (int)A.z % 254];
+}
+
+float fBm(point query, float H, float octaves)
+{
+    static int first_time = 1;
+    static float *exponent_array;
+
+    int i;
+    float frequency, value;
+
+    if (first_time)
+    {
+        frequency = 1.0f;
+        exponent_array = (float *)malloc((octaves+1)*sizeof(float));
+        for (i=0; i<=octaves; i++)
+        {
+            exponent_array[i] = pow(frequency, H);
+            frequency *= LACUNARITY;
+        }
+    }
+
+    frequency = 1.0f;
+    value = 0.0f;
+
+    for (i=0; i<octaves; i++)
+    {
+        value += noise(query) * exponent_array[i];
+        query.x *= LACUNARITY;
+        query.y *= LACUNARITY;
+        query.z *= LACUNARITY;
+    }
+
+    float remainder;
+    remainder = octaves - (int)octaves;
+    if (remainder)
+    {
+        value += remainder * noise(query) * exponent_array[i];
+    }
+
+    return value;
 }

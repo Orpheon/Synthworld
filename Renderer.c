@@ -1,7 +1,7 @@
 /* TODO:
 1. Fix x/z rotations --DONE--
 2. If necessary, fix y too --BUGGY, BUT WORKING--
-3. Add shading and make terrain white
+3. Add shading and make terrain white --DONE--
 5. Move to fBm
 6. Use multi-fractals
 7. Add texture generation
@@ -17,12 +17,14 @@
 #define length_of_vector(a) sqrt(a.x*a.x + a.y*a.y + a.z*a.z)
 #define SIGN(a) (a/abs(a))
 
-#define SCREEN_WIDTH 1000
+#define SCREEN_WIDTH 1600
 #define SCREEN_HEIGHT 1000
 #define MAP_WIDTH 400
 #define MAP_LENGTH 400
-#define NOISE_SCALE 100
-#define NOISE_RESOLUTION 50
+#define NOISE_SCALE 40
+#define NOISE_RESOLUTION 400
+#define NOISE_DIMENSION 0.3
+#define NOISE_OCTAVE_NUMBER 5
 #define CAMERA_SPEED 1
 #define TURNING_SPEED 80
 #ifndef PI
@@ -96,6 +98,7 @@ int main(int argc, char **argv)
     // Make sure that height is non-zero to avoid division by zero
     height = height < 1 ? 1 : height;
 
+    // Reset the mouse in the middle
     glfwSetMousePos(width/2, height/2);
 
     //Set up the lighting
@@ -160,8 +163,12 @@ int main(int argc, char **argv)
         direction.y /= length;
         direction.z /= length;
 
-        // Reset mouse
-        glfwSetMousePos(width/2, height/2);
+        // Reset the mouse in the middle if K isn't pressed (to allow the moving around of the window)
+        if (glfwGetKey('K') != GLFW_PRESS)
+        {
+            glfwSetMousePos(width/2, height/2);
+        }
+
 
         // Handle keyboard input
         if (glfwGetKey('W') == GLFW_PRESS)
@@ -233,8 +240,7 @@ void generate_heightmap(float (**terrain), point base_point)
         {
             tmpPoint.y = (y+(MAP_LENGTH/2.0f)+base_point.y)/NOISE_RESOLUTION;
             //printf("(%f|%f|%f)", tmpPoint.x, tmpPoint.y, tmpPoint.z);
-            terrain[x+(MAP_WIDTH/2)][y+(MAP_LENGTH/2)] = noise(tmpPoint)*NOISE_SCALE;
-            fprintf(fp, "%f ", (noise(tmpPoint)+1)*255/2);
+            terrain[x+(MAP_WIDTH/2)][y+(MAP_LENGTH/2)] = fBm(tmpPoint, NOISE_DIMENSION, NOISE_OCTAVE_NUMBER)*NOISE_SCALE;
         }
         fprintf(fp, "\n");
     }
