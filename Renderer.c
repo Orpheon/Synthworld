@@ -2,9 +2,10 @@
 1. Fix x/z rotations --DONE--
 2. If necessary, fix y too --BUGGY, BUT WORKING--
 3. Add shading and make terrain white --DONE--
-5. Move to fBm
-6. Use multi-fractals
-7. Add texture generation
+5. Move to fBm --DONE--
+6. Add bump-mapping --DONE--
+7. Use multi-fractals
+8. Add texture generation
 */
 #include <GL/glfw.h>
 #include <GL/glu.h>
@@ -21,6 +22,7 @@
 #define SCREEN_HEIGHT 1000
 #define MAP_WIDTH 400
 #define MAP_LENGTH 400
+#define BUMPMAP_SIZE 0.1
 #define NOISE_SCALE 40
 #define NOISE_RESOLUTION 400
 #define NOISE_DIMENSION 0.3
@@ -31,7 +33,7 @@
 #define PI 3.141592654f
 #endif
 
-void generate_heightmap(float (**terrain), point base_point);
+void generate_heightmap(float (**terrain), point base_point, point (**bumpmap));
 void render();
 int updatemap(float **terrain, point camera, point direction);
 void updateview(point camera, point direction);
@@ -67,11 +69,17 @@ int main(int argc, char **argv)
     {
         terrain[i] = (float*) malloc(MAP_LENGTH*sizeof(float));
     }
+    point **bumpmap;
+    bumpmap = (point**) malloc(MAP_WIDTH*sizeof(point*));
+    for (i = 0; i < MAP_WIDTH; i++)
+    {
+        bumpmap[i] = (point*) malloc(MAP_LENGTH*sizeof(point));
+    }
 
     tmp.x = (int)camera.x;
     tmp.y = (int)camera.y;
     tmp.z = 0;
-    generate_heightmap(terrain, tmp);
+    generate_heightmap(terrain, tmp, bumpmap);
 
     int running = GL_TRUE;
     // Initialize GLFW
@@ -200,7 +208,7 @@ int main(int argc, char **argv)
         updateview(camera, direction);
 
         // Render
-        render(terrain, camera, direction);
+        render(terrain, bumpmap, camera, direction);
 
         glPopMatrix();// Restore the original coordinate system
 
@@ -222,10 +230,11 @@ int main(int argc, char **argv)
     exit( EXIT_SUCCESS );
 }
 
-void generate_heightmap(float (**terrain), point base_point)
+void generate_heightmap(float (**terrain), point base_point, point (**bumpmap))
 {
     int x, y;
-    point tmpPoint;
+    float tmp[3];
+    point tmpPoint, bump_vector;
     FILE *fp;
     fp = fopen("image.map", "w");
 
@@ -241,6 +250,15 @@ void generate_heightmap(float (**terrain), point base_point)
             tmpPoint.y = (y+(MAP_LENGTH/2.0f)+base_point.y)/NOISE_RESOLUTION;
             //printf("(%f|%f|%f)", tmpPoint.x, tmpPoint.y, tmpPoint.z);
             terrain[x+(MAP_WIDTH/2)][y+(MAP_LENGTH/2)] = fBm(tmpPoint, NOISE_DIMENSION, NOISE_OCTAVE_NUMBER)*NOISE_SCALE;
+
+            bump_vector.x = tmpPoint.x*NOISE_RESOLUTION;
+            bump_vector.y = tmpPoint.y*NOISE_RESOLUTION;
+            bump_vector.z = tmpPoint.z*NOISE_RESOLUTION;
+            memcpy(tmp, rand_vectors[fold(bump_vector)], sizeof(float)*3);
+            bump_vector.x = tmp[0]*BUMPMAP_SIZE;
+            bump_vector.y = tmp[1]*BUMPMAP_SIZE;
+            bump_vector.z = tmp[2]*BUMPMAP_SIZE;
+            bumpmap[x+(MAP_WIDTH/2)][y+(MAP_LENGTH/2)] = bump_vector;
         }
         fprintf(fp, "\n");
     }
@@ -248,11 +266,11 @@ void generate_heightmap(float (**terrain), point base_point)
     fclose(fp);
 }
 
-void render(float **terrain, point camera, point direction)
+void render(float **terrain, point **bumpmap, point camera, point direction)
 {
     int x, z;
     float height[4], length;
-    point normal;
+    point normal, bump_normal;
 
     GLfloat lightPos[] = {0.0f, 1.0f, 0.0f, 0.0f};
     glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
@@ -287,15 +305,34 @@ void render(float **terrain, point camera, point direction)
             normal.x = height[1]-height[0];
             normal.y = 1;
             normal.z = height[2]-height[0];
-            length = length_of_vector(normal);
-            normal.x /= length;
-            normal.y /= length;
-            normal.z /= length;
+            normalize(&normal);
 
-            glNormal3f(normal.x, normal.y, normal.z);
+            bump_normal.x = normal.x + (bumpmap[x][z]).x;
+            bump_normal.y = normal.y + (bumpmap[x][z]).y;
+            bump_normal.z = normal.z + (bumpmap[x][z]).z;
+            normalize(&bump_normal);
+            glNormal3f(bump_normal.x, bump_normal.y, bump_normal.z);
             glVertex3f(x, height[0], -(z));
+
+            bump_normal.x = normal.x + (bumpmap[x+1][z]).x;
+            bump_normal.y = normal.y + (bumpmap[x+1][z]).y;
+            bump_normal.z = normal.z + (bumpmap[x+1][z]).z;
+            normalize(&bump_normal);
+            glNormal3f(bump_normal.x, bump_normal.y, bump_normal.z);
             glVertex3f(x+1, height[1], -(z));
+
+            bump_normal.x = normal.x + (bumpmap[x][z+1]).x;
+            bump_normal.y = normal.y + (bumpmap[x][z+1]).y;
+            bump_normal.z = normal.z + (bumpmap[x][z+1]).z;
+            normalize(&bump_normal);
+            glNormal3f(bump_normal.x, bump_normal.y, bump_normal.z);
             glVertex3f(x, height[2], -(z+1));
+
+            bump_normal.x = normal.x + (bumpmap[x+1][z+1]).x;
+            bump_normal.y = normal.y + (bumpmap[x+1][z+1]).y;
+            bump_normal.z = normal.z + (bumpmap[x+1][z+1]).z;
+            normalize(&bump_normal);
+            glNormal3f(bump_normal.x, bump_normal.y, bump_normal.z);
             glVertex3f(x+1, height[3], -(z+1));
         }
         glEnd();
@@ -324,7 +361,7 @@ int updatemap(float **terrain, point camera, point old_cam)
     tmp.x = (int)camera.x;
     tmp.y = (int)camera.y;
     tmp.z = 0;
-    generate_heightmap(terrain, tmp);
+    //generate_heightmap(terrain, tmp);
 }
 
 void updateview(point camera, point direction)
