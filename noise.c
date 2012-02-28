@@ -1,5 +1,5 @@
 #include "geometry.c"
-#include "random_numbers.h"
+#include "random_numbers.c"
 #include <stdio.h>
 #include <string.h>
 
@@ -70,7 +70,7 @@ float noise(point query)
 
 int fold(point A)
 {
-    return perm_table[perm_table[perm_table[(int)A.x % 254] + (int)A.y % 254] + (int)A.z % 254];
+    return perm_table[ (perm_table[ (perm_table[(int)A.x % 254] + (int)A.y) % 254] + (int)A.z) % 254];
 }
 
 float fBm(point query, float H, float octaves)

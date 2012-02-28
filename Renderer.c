@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "geometry.c"
+#include "random_numbers.c"
 #include "noise.c"
 
 #define length_of_vector(a) sqrt(a.x*a.x + a.y*a.y + a.z*a.z)
@@ -41,6 +42,8 @@ void updateview(point camera, point direction);
 
 int main(int argc, char **argv)
 {
+    initialize_random_numbers();
+
     int i, j;
     float length, mouse_x, mouse_y;
 
