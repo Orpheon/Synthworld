@@ -26,9 +26,10 @@
 #define BUMPMAP_SIZE 0.1
 #define NOISE_SCALE 400
 #define NOISE_RESOLUTION 500
-#define NOISE_DIMENSION 2
+#define NOISE_DIMENSION 0.5
 #define NOISE_OCTAVE_NUMBER 5
-#define MULTIFRACTAL_OFFSET 4
+#define MULTIFRACTAL_OFFSET 0.3
+#define SEA_LEVEL -10
 #define CAMERA_SPEED 1
 #define TURNING_SPEED 80
 #ifndef PI
@@ -49,9 +50,9 @@ int main(int argc, char **argv)
 
     point camera, direction, old_camera_pos, tmp;
     // The theoretical camera position
-    camera.x = MAP_WIDTH/2;
-    camera.y = NOISE_SCALE + 15.0f;
-    camera.z = -MAP_LENGTH/2;
+    camera.x = 0.0;
+    camera.y = 15.0f;
+    camera.z = 0.0;
 
     // The camera position a frame ago (used for detecting and calculating movement)
     old_camera_pos = camera;
@@ -83,6 +84,7 @@ int main(int argc, char **argv)
     tmp.x = (int)camera.x;
     tmp.y = (int)camera.y;
     tmp.z = 0;
+
     generate_heightmap(terrain, tmp, bumpmap);
 
     int running = GL_TRUE;
@@ -292,19 +294,7 @@ void render(float **terrain, point **bumpmap, point camera, point direction)
     GLfloat lightPos[] = {0.0f, 1.0f, 0.0f, 0.0f};
     glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
-    //Set up the material
-
-    //The color of the object
-    GLfloat materialColor[] = {0.2f, 0.2f, 1.0f, 1.0f};
-    //The specular (shiny) component of the material
-    GLfloat materialSpecular[] = {0.0f, 0.0f, 0.0f, 0.0f};
-    //The color emitted by the material
-    GLfloat materialEmission[] = {0, 0, 0, 0.0f};
-
-    glDisable(GL_COLOR_MATERIAL); //Required for the glMaterial calls to work
-    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, materialColor);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, materialSpecular);
-    glMaterialfv(GL_FRONT, GL_EMISSION, materialEmission);
+    glEnable(GL_COLOR_MATERIAL); //Required for the glMaterial calls to work
 
     for(x=0; x<MAP_WIDTH-1; x++)
     {
@@ -324,6 +314,21 @@ void render(float **terrain, point **bumpmap, point camera, point direction)
             normal.z = height[2]-height[0];
             normalize(&normal);
 
+            if (height[0] > SEA_LEVEL)
+            {
+                glColor3f(0.394117647, 0.3, 0.0);// brown
+            }
+            else
+            {
+                glColor3f(0.0, 0.0, 0.31372549); // dark blue
+                height[0] = SEA_LEVEL;
+                height[1] = SEA_LEVEL;
+                height[2] = SEA_LEVEL;
+                height[3] = SEA_LEVEL;
+                normal.x = 0.0;
+                normal.y = 1.0;
+                normal.z = 0.0;
+            }
             bump_normal.x = normal.x + (bumpmap[x][z]).x;
             bump_normal.y = normal.y + (bumpmap[x][z]).y;
             bump_normal.z = normal.z + (bumpmap[x][z]).z;

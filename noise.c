@@ -127,12 +127,11 @@ float multifractal_1(point query, float H, float octaves, float offset)
         exponent_array = (float *)malloc((octaves+1)*sizeof(float));
         for (i=0; i<=octaves; i++)
         {
-            exponent_array[i] = pow(frequency, H);
+            exponent_array[i] = pow(frequency, -H);
             frequency *= LACUNARITY;
         }
     }
 
-    frequency = 1.0f;
     value = 1.0f;
 
     for (i=0; i<octaves; i++)
