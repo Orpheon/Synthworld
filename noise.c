@@ -87,17 +87,57 @@ float fBm(point query, float H, float octaves)
         exponent_array = (float *)malloc((octaves+1)*sizeof(float));
         for (i=0; i<=octaves; i++)
         {
+            exponent_array[i] = pow(frequency, -H);
+            frequency *= LACUNARITY;
+        }
+    }
+
+    frequency = 1.0f;
+    value = 1.0f;
+
+    for (i=0; i<octaves; i++)
+    {
+        value += noise(query) * exponent_array[i];
+        query.x *= LACUNARITY;
+        query.y *= LACUNARITY;
+        query.z *= LACUNARITY;
+    }
+
+    float remainder;
+    remainder = octaves - (int)octaves;
+    if (remainder)
+    {
+        value += remainder * noise(query) * exponent_array[i];
+    }
+
+    return value;
+}
+
+float multifractal_1(point query, float H, float octaves, float offset)
+{
+    static int first_time = 1;
+    static float *exponent_array;
+
+    int i;
+    float frequency, value;
+
+    if (first_time)
+    {
+        frequency = 1.0f;
+        exponent_array = (float *)malloc((octaves+1)*sizeof(float));
+        for (i=0; i<=octaves; i++)
+        {
             exponent_array[i] = pow(frequency, H);
             frequency *= LACUNARITY;
         }
     }
 
     frequency = 1.0f;
-    value = 0.0f;
+    value = 1.0f;
 
     for (i=0; i<octaves; i++)
     {
-        value += noise(query) * exponent_array[i];
+        value *= (noise(query) * offset * exponent_array[i]);
         query.x *= LACUNARITY;
         query.y *= LACUNARITY;
         query.z *= LACUNARITY;

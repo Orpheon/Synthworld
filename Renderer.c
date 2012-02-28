@@ -23,10 +23,11 @@
 #define MAP_WIDTH 400
 #define MAP_LENGTH 400
 #define BUMPMAP_SIZE 0.1
-#define NOISE_SCALE 40
-#define NOISE_RESOLUTION 400
-#define NOISE_DIMENSION 0.3
+#define NOISE_SCALE 400
+#define NOISE_RESOLUTION 500
+#define NOISE_DIMENSION 2
 #define NOISE_OCTAVE_NUMBER 5
+#define MULTIFRACTAL_OFFSET 4
 #define CAMERA_SPEED 1
 #define TURNING_SPEED 80
 #ifndef PI
@@ -233,13 +234,26 @@ int main(int argc, char **argv)
 void generate_heightmap(float (**terrain), point base_point, point (**bumpmap))
 {
     int x, y;
-    float tmp[3];
+    float tmp[3], maxvalue, a, b;
     point tmpPoint, bump_vector;
     FILE *fp;
     fp = fopen("image.map", "w");
 
     // We don't need the z, so just set it to 0 and ignore
     tmpPoint.z = 0;
+
+    maxvalue = -1;
+    for (tmpPoint.x=0; tmpPoint.x<=3; tmpPoint.x+=0.008)
+    {
+        for (tmpPoint.y=0; tmpPoint.y<=3; tmpPoint.y+=0.008)
+        {
+            tmp[0] = multifractal_1(tmpPoint, NOISE_DIMENSION, NOISE_OCTAVE_NUMBER, MULTIFRACTAL_OFFSET);
+            if (tmp[0] > maxvalue)
+            {
+                maxvalue = tmp[0];
+            }
+        }
+    }
 
     for(x=-(MAP_WIDTH/2); x<((MAP_WIDTH/2)); x++)
     {
@@ -248,8 +262,8 @@ void generate_heightmap(float (**terrain), point base_point, point (**bumpmap))
         for(y=-(MAP_LENGTH/2); y<((MAP_LENGTH/2)); y++)
         {
             tmpPoint.y = (y+(MAP_LENGTH/2.0f)+base_point.y)/NOISE_RESOLUTION;
-            //printf("(%f|%f|%f)", tmpPoint.x, tmpPoint.y, tmpPoint.z);
-            terrain[x+(MAP_WIDTH/2)][y+(MAP_LENGTH/2)] = fBm(tmpPoint, NOISE_DIMENSION, NOISE_OCTAVE_NUMBER)*NOISE_SCALE;
+            //terrain[x+(MAP_WIDTH/2)][y+(MAP_LENGTH/2)] = fBm(tmpPoint, NOISE_DIMENSION, NOISE_OCTAVE_NUMBER)*NOISE_SCALE;
+            terrain[x+(MAP_WIDTH/2)][y+(MAP_LENGTH/2)] = multifractal_1(tmpPoint, NOISE_DIMENSION, NOISE_OCTAVE_NUMBER, MULTIFRACTAL_OFFSET)*NOISE_SCALE/maxvalue;
 
             bump_vector.x = tmpPoint.x*NOISE_RESOLUTION;
             bump_vector.y = tmpPoint.y*NOISE_RESOLUTION;
