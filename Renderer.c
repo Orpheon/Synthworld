@@ -21,17 +21,19 @@
 
 #define SCREEN_WIDTH 1600
 #define SCREEN_HEIGHT 1000
-#define MAP_WIDTH 400
-#define MAP_LENGTH 400
+#define MAP_WIDTH 500
+#define MAP_LENGTH 500
 #define BUMPMAP_SIZE 0.1
 #define NOISE_SCALE 400
 #define NOISE_RESOLUTION 500
-#define NOISE_DIMENSION 0.5
+#define NOISE_DIMENSION 10
 #define NOISE_OCTAVE_NUMBER 5
 #define MULTIFRACTAL_OFFSET 0.3
 #define SEA_LEVEL -10
+#define GRAVITY 0.7
 #define CAMERA_SPEED 1
 #define TURNING_SPEED 80
+#define CAMERA_MIN_HEIGHT 5
 #ifndef PI
 #define PI 3.141592654f
 #endif
@@ -51,7 +53,7 @@ int main(int argc, char **argv)
     point camera, direction, old_camera_pos, tmp;
     // The theoretical camera position
     camera.x = 0.0;
-    camera.y = 15.0f;
+    camera.y = CAMERA_MIN_HEIGHT;
     camera.z = 0.0;
 
     // The camera position a frame ago (used for detecting and calculating movement)
@@ -209,6 +211,14 @@ int main(int argc, char **argv)
             camera.z += CAMERA_SPEED*direction.x;
         }
 
+        // Gravity
+        camera.y -= GRAVITY;
+        // Push out of walls
+        if (camera.y < terrain[(int)camera.x][(int)(-camera.z)] + CAMERA_MIN_HEIGHT)
+        {
+            camera.y = terrain[(int)camera.x][(int)(-camera.z)] + CAMERA_MIN_HEIGHT;
+        }
+
         //updatemap(terrain, camera, old_camera_pos);
 
         updateview(camera, direction);
@@ -316,7 +326,7 @@ void render(float **terrain, point **bumpmap, point camera, point direction)
             normal.z = height[2]-height[0];
             normalize(&normal);
 
-            if (height[0] > SEA_LEVEL)
+            if ((height[0] > SEA_LEVEL) && (height[1] > SEA_LEVEL) && (height[2] > SEA_LEVEL) && (height[3] > SEA_LEVEL))
             {
                 glColor3f(0.394117647, 0.3, 0.0);// brown
             }
