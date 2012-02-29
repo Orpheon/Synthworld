@@ -271,15 +271,15 @@ void generate_heightmap(float (**terrain), point base_point, point (**bumpmap))
         }
     }
 
-    for(x=-(MAP_WIDTH/2); x<((MAP_WIDTH/2)); x++)
+    for(x=0; x<MAP_WIDTH; x++)
     {
         // /10 because positions are always ints here, but I don't want white noise. So scale up.
-        tmpPoint.x = (x+(MAP_WIDTH/2.0f)+base_point.x)/NOISE_RESOLUTION;
-        for(y=-(MAP_LENGTH/2); y<((MAP_LENGTH/2)); y++)
+        tmpPoint.x = (x+base_point.x)/NOISE_RESOLUTION;
+        for(y=0; y<MAP_LENGTH; y++)
         {
-            tmpPoint.y = (y+(MAP_LENGTH/2.0f)+base_point.y)/NOISE_RESOLUTION;
+            tmpPoint.y = (y+base_point.y)/NOISE_RESOLUTION;
             //terrain[x+(MAP_WIDTH/2)][y+(MAP_LENGTH/2)] = fBm(tmpPoint, NOISE_DIMENSION, NOISE_OCTAVE_NUMBER)*NOISE_SCALE;
-            terrain[x+(MAP_WIDTH/2)][y+(MAP_LENGTH/2)] = multifractal_1(tmpPoint, NOISE_DIMENSION, NOISE_OCTAVE_NUMBER, MULTIFRACTAL_OFFSET)*NOISE_SCALE/maxvalue;
+            terrain[x][y] = multifractal_1(tmpPoint, NOISE_DIMENSION, NOISE_OCTAVE_NUMBER, MULTIFRACTAL_OFFSET)*NOISE_SCALE/maxvalue;
             //terrain[x+(MAP_WIDTH/2)][y+(MAP_LENGTH/2)] = multifractal_altitude(tmpPoint, NOISE_DIMENSION, NOISE_OCTAVE_NUMBER)*NOISE_SCALE;
 
             bump_vector.x = tmpPoint.x*NOISE_RESOLUTION;
@@ -289,7 +289,7 @@ void generate_heightmap(float (**terrain), point base_point, point (**bumpmap))
             bump_vector.x = tmp[0]*BUMPMAP_SIZE;
             bump_vector.y = tmp[1]*BUMPMAP_SIZE;
             bump_vector.z = tmp[2]*BUMPMAP_SIZE;
-            bumpmap[x+(MAP_WIDTH/2)][y+(MAP_LENGTH/2)] = bump_vector;
+            bumpmap[x][y] = bump_vector;
         }
         fprintf(fp, "\n");
     }
