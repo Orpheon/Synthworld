@@ -247,6 +247,7 @@ void generate_heightmap(float (**terrain), point base_point, point (**bumpmap))
     // We don't need the z, so just set it to 0 and ignore
     tmpPoint.z = 0;
 
+    // Multifractal_1 range testing
     maxvalue = -1;
     for (tmpPoint.x=0; tmpPoint.x<=3; tmpPoint.x+=0.008)
     {
@@ -269,6 +270,7 @@ void generate_heightmap(float (**terrain), point base_point, point (**bumpmap))
             tmpPoint.y = (y+(MAP_LENGTH/2.0f)+base_point.y)/NOISE_RESOLUTION;
             //terrain[x+(MAP_WIDTH/2)][y+(MAP_LENGTH/2)] = fBm(tmpPoint, NOISE_DIMENSION, NOISE_OCTAVE_NUMBER)*NOISE_SCALE;
             terrain[x+(MAP_WIDTH/2)][y+(MAP_LENGTH/2)] = multifractal_1(tmpPoint, NOISE_DIMENSION, NOISE_OCTAVE_NUMBER, MULTIFRACTAL_OFFSET)*NOISE_SCALE/maxvalue;
+            //terrain[x+(MAP_WIDTH/2)][y+(MAP_LENGTH/2)] = multifractal_altitude(tmpPoint, NOISE_DIMENSION, NOISE_OCTAVE_NUMBER)*NOISE_SCALE;
 
             bump_vector.x = tmpPoint.x*NOISE_RESOLUTION;
             bump_vector.y = tmpPoint.y*NOISE_RESOLUTION;
