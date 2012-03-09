@@ -17,7 +17,7 @@
 #define MAX_SIGHT_WIDTH MAX_SIGHT_DISTANCE*(tan(FOV*(90/PI)))
 #define MAX_SIGHT_DISTANCE 1000
 #define FOV 60
-#define DISTANCE_FUNCTION(d) (d) // Experiment with this
+#define DISTANCE_FUNCTION(d) (1) // Experiment with this
 #ifndef PI
 #define PI 3.141592654f
 #endif
@@ -102,7 +102,7 @@ int main(int argc, char **argv)
     float x, y, value, dz, distance, increment_x, increment_y;
     point tmp;
     point_2d_array terrain;
-    point_array point_row;
+    point_array *point_row;
     while( running )
     {
         glPushMatrix();// Backup the current coordinate system
@@ -188,15 +188,9 @@ int main(int argc, char **argv)
                 if (i>=terrain.num_elements)
                 {
                     // We need to start creating new rows
-                    point_row.array = 0;
-                    point_row.num_allocations = 0;
-                    point_row.num_elements = 0;
-                    add_to_point_2d_array(&terrain, point_row);
+                    allocate_new_point_array(&terrain);
                 }
-                else
-                {
-                    point_row = terrain.array[i];
-                }
+                point_row = &(terrain.array[i]);
 
                 increment_x = DISTANCE_FUNCTION(abs(x));
 
@@ -215,54 +209,54 @@ int main(int argc, char **argv)
                         // The point is visible, so remember it
 
 
-                        if (j >= point_row.num_elements)
+                        if (j >= point_row->num_elements)
                         {
                             // Have to create a new element in the array
-                            add_to_point_array(&point_row, tmp);
+                            add_point_to_array(point_row, tmp);
                         }
                         else
                         {
                             // The room is already there, just overwrite the old value
-                            point_row.array[j] = tmp;
+                            point_row->array[j] = tmp;
                         }
 
                         // Add points around that specific point
 
                         tmp.x += increment_x;
-                        if (j >= point_row.num_elements)
+                        if (j >= point_row->num_elements)
                         {
                             // Have to create a new element in the array
-                            add_to_point_array(&point_row, tmp);
+                            add_point_to_array(point_row, tmp);
                         }
                         else
                         {
                             // The room is already there, just overwrite the old value
-                            point_row.array[j] = tmp;
+                            point_row->array[j] = tmp;
                         }
 
                         tmp.x -= increment_x;
                         tmp.y += increment_y;
-                        if (j >= point_row.num_elements)
+                        if (j >= point_row->num_elements)
                         {
                             // Have to create a new element in the array
-                            add_to_point_array(&point_row, tmp);
+                            add_point_to_array(point_row, tmp);
                         }
                         else
                         {
                             // The room is already there, just overwrite the old value
-                            point_row.array[j] = tmp;
+                            point_row->array[j] = tmp;
                         }
 
                         tmp.x += increment_x;
-                        if (j >= point_row.num_elements)
+                        if (j >= point_row->num_elements)
                         {
                             // Have to create a new element in the array
-                            add_to_point_array(&point_row, tmp);
+                            add_point_to_array(point_row, tmp);
                         }
                         else
                         {
                             // The room is already there, just overwrite the old value
-                            point_row.array[j] = tmp;
+                            point_row->array[j] = tmp;
                         }
 
                         j++;
@@ -271,12 +265,8 @@ int main(int argc, char **argv)
                 }
                 x += increment_x;
 
-                while (j<point_row.num_elements)
-                {
-                    // Some elements have to get deleted, those that weren't used this frame
-                    free(point_row.array + point_row.num_elements-1);
-                    point_row.num_elements--;
-                }
+                // Forget about any extra space
+                point_row->num_elements = j;
 
                 // Only create a new row if this one was used
                 if (j != 0)
@@ -285,18 +275,15 @@ int main(int argc, char **argv)
                 }
             }
 
-            while (i<terrain.num_elements)
-            {
-                // Some elements have to get deleted
-                point_row = terrain.array[terrain.num_elements-1];
-                free_point_array(&point_row);
-                free(terrain.array + terrain.num_elements-1);
-                terrain.num_elements--;
-            }
+            // Ignore any space that wasn't used
+            terrain.num_elements = i;
         }
 
+        printf("\nBefore: %i", terrain.num_elements);
+        fflush(stdout);
+
         // Render
-        render(camera, direction);
+        render(&terrain, camera, direction);
 
         glPopMatrix();// Restore the original coordinate system
 
@@ -312,22 +299,27 @@ int main(int argc, char **argv)
     exit( EXIT_SUCCESS );
 }
 
-void render(point_2d_array terrain, point camera, point direction)
+void render(point_2d_array *terrain, point camera, point direction)
 {
     glClearColor(0.0, 0.0, 0.0, 1.0);// Fill the screen with black
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);// Reset both buffers
 
     int i, j;
-    point_array point_row;
+    point_array *point_row;
     point tmp_point;
-    for (i=0; i<terrain.num_elements; i++)
+
+    // NOTE: (*TERRAIN).NUM_ELEMENTS == HUGE NEGATIVE NUMBER. SEEMS POSSIBLE ABOVE (HUGE POSITIVE NUMBER, NOT THE SAME ONE). ???
+
+    printf("\nAfter: %i", (*terrain).num_elements);
+    fflush(stdout);
+    for (i=0; i<(*terrain).num_elements; i++)
     {
-        point_row = terrain.array[i];
+        point_row = &((*terrain).array[i]);
         glBegin(GL_TRIANGLE_STRIP);
-        for (j=0; j<point_row.num_elements; j++)
+        for (j=0; j<(*point_row).num_elements; j++)
         {
-            tmp_point = point_row.array[j];
-            glVertex3f(tmp_point.y, tmp_point.z, -tmp_point.x);
+            tmp_point = (*point_row).array[j];
+            glVertex3f(tmp_point.y, tmp_point.z, -tmp_point.x);// convert x/y/z as usual in math to the OpenGL system
         }
         glEnd();
     }

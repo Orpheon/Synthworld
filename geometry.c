@@ -36,7 +36,7 @@ typedef struct
     int num_allocations;
 } point_2d_array;
 
-void add_to_point_array(point_array *root, point object)
+void add_point_to_array(point_array *root, point object)
 {
     // If I need to allocate some new memory
     if (root->num_elements == root->num_allocations)
@@ -57,7 +57,7 @@ void free_point_array(point_array *root)
     root->num_allocations = 0;
 }
 
-void add_to_point_2d_array(point_2d_array *root, point_array object)
+void allocate_new_point_array(point_2d_array *root)
 {
     // If I need to allocate some new memory
     if (root->num_elements == root->num_allocations)
@@ -65,6 +65,9 @@ void add_to_point_2d_array(point_2d_array *root, point_array object)
         root->num_allocations += MEM_ALLOCATION_INCREMENT;
         root = realloc(root->array, (root->num_allocations*sizeof(point_array)));
     }
+    // create a new array
+    point_array object;
+    // add it to the array list
     root->array[root->num_elements++] = object;
 }
 void free_point_2d_array(point_2d_array *root)
@@ -73,7 +76,7 @@ void free_point_2d_array(point_2d_array *root)
     for (i=0; i<root->num_elements; i++)
     {
         // Free everything in the array
-        free_array(root->array + i);
+        free_point_array(root->array + i);
         // Free the array itself
         free(root->array + i);
     }
