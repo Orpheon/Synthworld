@@ -15,7 +15,7 @@
 #define TURNING_SPEED 80
 #define CAMERA_MIN_HEIGHT 5
 #define MAX_SIGHT_WIDTH MAX_SIGHT_DISTANCE*(tan(FOV*(90/PI)))
-#define MAX_SIGHT_DISTANCE 1000
+#define MAX_SIGHT_DISTANCE 100
 #define FOV 60
 #define DISTANCE_FUNCTION(d) (1) // Experiment with this
 #ifndef PI
@@ -97,11 +97,19 @@ int main(int argc, char **argv)
 
     glFlush();
 
+    // Initialize terrain variable
+    point_2d_array terrain;
+    terrain.num_elements = 0;
+    terrain.num_allocations = 0;
+    terrain.array = 0;
+
+    int hasMoved;
+    hasMoved = 1;
+
     // Main loop
-    int i, j, hasMoved;
+    int i, j;
     float x, y, value, dz, distance, increment_x, increment_y;
     point tmp;
-    point_2d_array terrain;
     point_array *point_row;
     while( running )
     {
@@ -117,8 +125,6 @@ int main(int argc, char **argv)
         // Get the positions relative to the center of the screen, and normalize them
         mouse_x = (mouse_x - width/2)/width;
         mouse_y = (mouse_y - height/2)/height;
-
-        hasMoved = 0;
 
         if (mouse_x != 0 || mouse_y != 0)
         {
@@ -180,7 +186,7 @@ int main(int argc, char **argv)
         i = 0;
         if (hasMoved==1)
         {
-            updateview(camera, direction);
+            //updateview(camera, direction);
 
             x = -MAX_SIGHT_DISTANCE;
             while (x < MAX_SIGHT_DISTANCE)
@@ -200,14 +206,13 @@ int main(int argc, char **argv)
                 {
                     increment_y = DISTANCE_FUNCTION(abs(y));
 
-                    value = noise2d(x+camera.x, y+camera.y);
-                    tmp.x = x-camera.x;
-                    tmp.y = y-camera.y;
-                    tmp.z = value-camera.z;
-                    if (point_in_frustum(tmp, direction, FOV, MAX_SIGHT_DISTANCE, MAX_SIGHT_WIDTH/2, (MAX_SIGHT_WIDTH*height/width)/2) == 1)
+                    value = noise2d(x+camera.z, y+camera.x);
+                    tmp.z = x-camera.x;
+                    tmp.x = y-camera.y;
+                    tmp.y = value-camera.z;
+                    if (1)//(point_in_frustum(tmp, direction, FOV, MAX_SIGHT_DISTANCE, MAX_SIGHT_WIDTH/2, (MAX_SIGHT_WIDTH*height/width)/2) == 1)
                     {
                         // The point is visible, so remember it
-
 
                         if (j >= point_row->num_elements)
                         {
@@ -217,12 +222,12 @@ int main(int argc, char **argv)
                         else
                         {
                             // The room is already there, just overwrite the old value
-                            point_row->array[j] = tmp;
+                            point_row->array[j++] = tmp;
                         }
 
                         // Add points around that specific point
 
-                        tmp.x += increment_x;
+                        tmp.z += increment_x;
                         if (j >= point_row->num_elements)
                         {
                             // Have to create a new element in the array
@@ -231,11 +236,11 @@ int main(int argc, char **argv)
                         else
                         {
                             // The room is already there, just overwrite the old value
-                            point_row->array[j] = tmp;
+                            point_row->array[j++] = tmp;
                         }
 
-                        tmp.x -= increment_x;
-                        tmp.y += increment_y;
+                        tmp.z -= increment_x;
+                        tmp.x += increment_y;
                         if (j >= point_row->num_elements)
                         {
                             // Have to create a new element in the array
@@ -244,10 +249,10 @@ int main(int argc, char **argv)
                         else
                         {
                             // The room is already there, just overwrite the old value
-                            point_row->array[j] = tmp;
+                            point_row->array[j++] = tmp;
                         }
 
-                        tmp.x += increment_x;
+                        tmp.z += increment_x;
                         if (j >= point_row->num_elements)
                         {
                             // Have to create a new element in the array
@@ -256,10 +261,8 @@ int main(int argc, char **argv)
                         else
                         {
                             // The room is already there, just overwrite the old value
-                            point_row->array[j] = tmp;
+                            point_row->array[j++] = tmp;
                         }
-
-                        j++;
                     }
                     y += increment_y;
                 }
@@ -276,11 +279,10 @@ int main(int argc, char **argv)
             }
 
             // Ignore any space that wasn't used
+//            printf("\ni=%i; num=%i", i, terrain.num_elements);
+//            fflush(stdout);
             terrain.num_elements = i;
         }
-
-        printf("\nBefore: %i", terrain.num_elements);
-        fflush(stdout);
 
         // Render
         render(&terrain, camera, direction);
@@ -292,7 +294,7 @@ int main(int argc, char **argv)
         glfwGetWindowParam( GLFW_OPENED );
     }
     // Free all the memory allocated for the terrain
-    free_point_2d_array(&terrain);
+    //free_point_2d_array(&terrain); // FIXME: UNCOMMENT TO FIX MEMORY LEAKS ONCE FIXED
     // Close window and terminate GLFW
     glfwTerminate();
     // Exit program
@@ -308,22 +310,21 @@ void render(point_2d_array *terrain, point camera, point direction)
     point_array *point_row;
     point tmp_point;
 
-    // NOTE: (*TERRAIN).NUM_ELEMENTS == HUGE NEGATIVE NUMBER. SEEMS POSSIBLE ABOVE (HUGE POSITIVE NUMBER, NOT THE SAME ONE). ???
-
-    printf("\nAfter: %i", (*terrain).num_elements);
-    fflush(stdout);
-    for (i=0; i<(*terrain).num_elements; i++)
+    for (i=0; i<terrain->num_elements; i++)
     {
-        point_row = &((*terrain).array[i]);
+        point_row = &(terrain->array[i]);
         glBegin(GL_TRIANGLE_STRIP);
-        for (j=0; j<(*point_row).num_elements; j++)
+        glColor3f(1.0, 1.0, 1.0);
+        for (j=0; j<point_row->num_elements; j++)
         {
-            tmp_point = (*point_row).array[j];
-            glVertex3f(tmp_point.y, tmp_point.z, -tmp_point.x);// convert x/y/z as usual in math to the OpenGL system
+            tmp_point = point_row->array[j];
+            //printf("\n%f\t%f\t%f", tmp_point.x, tmp_point.y, tmp_point.z);
+            glVertex3f(tmp_point.x, tmp_point.y, tmp_point.z);
         }
         glEnd();
     }
 
+    fflush(stdout);
     glFlush ();
     glfwSwapBuffers ();
 }

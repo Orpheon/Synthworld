@@ -42,7 +42,7 @@ void add_point_to_array(point_array *root, point object)
     if (root->num_elements == root->num_allocations)
     {
         root->num_allocations += MEM_ALLOCATION_INCREMENT;
-        root = realloc(root->array, (root->num_allocations*sizeof(point)));
+        root->array = realloc(root->array, ((root->num_allocations)*sizeof(point)));
     }
     root->array[root->num_elements++] = object;
 }
@@ -59,14 +59,18 @@ void free_point_array(point_array *root)
 
 void allocate_new_point_array(point_2d_array *root)
 {
+
     // If I need to allocate some new memory
     if (root->num_elements == root->num_allocations)
     {
         root->num_allocations += MEM_ALLOCATION_INCREMENT;
-        root = realloc(root->array, (root->num_allocations*sizeof(point_array)));
+        root->array = realloc(root->array, ((root->num_allocations)*sizeof(point_array)));
     }
     // create a new array
     point_array object;
+    object.num_elements = 0;
+    object.num_allocations = 0;
+    object.array = 0;
     // add it to the array list
     root->array[root->num_elements++] = object;
 }
@@ -77,8 +81,6 @@ void free_point_2d_array(point_2d_array *root)
     {
         // Free everything in the array
         free_point_array(root->array + i);
-        // Free the array itself
-        free(root->array + i);
     }
     root->num_elements = 0;
     root->num_allocations = 0;
@@ -171,19 +173,19 @@ int point_in_frustum(point query, point direction, float FOV, float depth, float
 
         // The left side
         planes[LEFT].normal = cross_product(up, tl);
-        normalize(&planes[LEFT].normal);
+        normalize(&(planes[LEFT].normal));
 
         // The top side
         planes[TOP].normal = cross_product(right, tl);
-        normalize(&planes[TOP].normal);
+        normalize(&(planes[TOP].normal));
 
         // The right side
         planes[RIGHT].normal = cross_product(up, br);
-        normalize(&planes[RIGHT].normal);
+        normalize(&(planes[RIGHT].normal));
 
         // The bottom side
         planes[BOTTOM].normal = cross_product(right, br);
-        normalize(&planes[BOTTOM].normal);
+        normalize(&(planes[BOTTOM].normal));
     }
 
     int i;
