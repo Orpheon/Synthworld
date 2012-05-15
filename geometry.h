@@ -25,3 +25,4 @@ point cross_product(point a, point b)
     return c;
 }
 #endif
+

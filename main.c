@@ -3,11 +3,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "geometry.c"
-#include "shaders.c"
+#include "geometry.h"
+#include "shaders.h"
 
 #define length_of_vector(a) sqrt(a.x*a.x + a.y*a.y + a.z*a.z)
-#define SIGN(a) (a/abs(a))
 
 #define SCREEN_WIDTH 1600
 #define SCREEN_HEIGHT 1000
