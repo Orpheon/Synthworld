@@ -4,46 +4,46 @@
 #include <stdio.h>
 #include <math.h>
 #include "geometry.c"
-#include "random_numbers.c"
-#include "noise.c"
+#include "shaders.c"
+
+#define length_of_vector(a) sqrt(a.x*a.x + a.y*a.y + a.z*a.z)
+#define SIGN(a) (a/abs(a))
 
 #define SCREEN_WIDTH 1600
 #define SCREEN_HEIGHT 1000
-#define SEA_LEVEL -10
-#define GRAVITY 0.7
+#define MAP_HALFWIDTH 1000
+#define MAP_HALFLENGTH 1000
 #define CAMERA_SPEED 1
 #define TURNING_SPEED 80
 #define CAMERA_MIN_HEIGHT 5
-#define MAX_SIGHT_WIDTH MAX_SIGHT_DISTANCE*(tan(FOV*(90/PI)))
-#define MAX_SIGHT_DISTANCE 100
-#define FOV 60
-#define DISTANCE_FUNCTION(d) (1) // Experiment with this
 #ifndef PI
 #define PI 3.141592654f
 #endif
 
-void updateview();
 void render();
+void updateview(point camera, point direction);
 
 int main(int argc, char **argv)
 {
-    //initialize_random_numbers();
+    int i, j;
+    float length, mouse_x, mouse_y;
 
-    float mouse_x, mouse_y;
-
-    point camera, direction;
+    point camera, direction, old_camera_pos, tmp;
     // The theoretical camera position
     camera.x = 0.0;
     camera.y = CAMERA_MIN_HEIGHT;
     camera.z = 0.0;
 
+    // The camera position a frame ago (used for detecting and calculating movement)
+    old_camera_pos = camera;
+
     // A unit vector, which is the direction we're pointing at
     direction.x = 0.25f;
     direction.y = 0.0f;
     direction.z = -0.25;
-    normalize(&direction);
 
-    // TODO: GENERATE TERRAIN
+    // Normalize direction
+    normalize(&direction);
 
     int running = GL_TRUE;
     // Initialize GLFW
@@ -73,20 +73,8 @@ int main(int argc, char **argv)
     // Reset the mouse in the middle
     glfwSetMousePos(width/2, height/2);
 
-//    //Set up the lighting
-//    glEnable(GL_LIGHTING);
-//    glEnable(GL_LIGHT0);
-//
-//    //Ambient lighting
-//    GLfloat ambientLight[] = {0.2f, 0.2f, 0.2f, 1.0f};
-//    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientLight);
-//    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-//
-//    GLfloat lightColor[] = {0.6f, 0.6f, 0.6f, 1.0f};
-//    //Diffuse (non-shiny) light component
-//    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor);
-//    //Specular (shiny) light component
-//    glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor);
+    //Set up the lighting
+    glDisable(GL_LIGHTING);
 
     glViewport (0, 0, (GLsizei)width, (GLsizei)height); //set the viewport to the current window specifications
     glMatrixMode (GL_PROJECTION); //set the matrix to projection
@@ -97,22 +85,33 @@ int main(int argc, char **argv)
 
     glFlush();
 
-    // Initialize terrain variable
-    point_2d_array terrain;
-    terrain.num_elements = 0;
-    terrain.num_allocations = 0;
-    terrain.array = 0;
+    // Load and compile the shaders
+    GLuint shader = createShaders();
 
-    int hasMoved;
-    hasMoved = 1;
+    // create one display list
+    GLuint grid = glGenLists(1);
+
+    // compile the display list, store the grid in it
+    glNewList(grid, GL_COMPILE);
+        int x, z;
+        for(x=-MAP_HALFWIDTH; x<MAP_HALFWIDTH-1; x++)
+        {
+            glBegin(GL_TRIANGLE_STRIP);
+                for(z=-MAP_HALFLENGTH; z<(MAP_HALFLENGTH-1); z++)
+                {
+                    glVertex3f(x, 0.0, -(z));
+                    glVertex3f(x+1, 0.0, -(z));
+                }
+            glEnd();
+        }
+    glEndList();
 
     // Main loop
-    int i, j;
-    float x, y, value, dz, distance, increment_x, increment_y;
-    point tmp;
-    point_array *point_row;
     while( running )
     {
+        glClearColor(0.0, 0.0, 0.0, 1.0);// Fill the screen with black
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);// Reset both buffers
+
         glPushMatrix();// Backup the current coordinate system
 
         // Handle mouse input
@@ -126,30 +125,28 @@ int main(int argc, char **argv)
         mouse_x = (mouse_x - width/2)/width;
         mouse_y = (mouse_y - height/2)/height;
 
-        if (mouse_x != 0 || mouse_y != 0)
+        // Change the direction vector along the x/z plane
+        tmp.x = -direction.z;
+        tmp.z = direction.x;
+        tmp.y = 0.0;
+        length = length_of_vector(tmp);
+        tmp.x *= mouse_x/length;
+        tmp.z *= mouse_x/length;
+        direction.x += tmp.x;
+        direction.z += tmp.z;
+        // Change the direction vector along the y plane
+        direction.y += sin(PI*TURNING_SPEED*mouse_y/360);
+        //printf("\n %f %f %f", mouse_y, direction.y, direction.z);
+
+        // Normalize the direction vector again
+        normalize(&direction);
+
+        // Reset the mouse in the middle if K isn't pressed (to allow the moving around of the window)
+        if (glfwGetKey('K') != GLFW_PRESS)
         {
-            // Translate the mouse movement into 3d coordinates
-            tmp.x = -direction.z;
-            tmp.z = direction.x;
-            tmp.y = 0.0;
-            normalize(&tmp);
-            tmp.x *= mouse_x;
-            tmp.z *= mouse_x;
-
-            direction.x += tmp.x;
-            direction.z += tmp.z;
-
-            direction.y += sin(PI*TURNING_SPEED*mouse_y/360);
-
-            normalize(&direction);
-
-//            // Reset the mouse in the middle if K isn't pressed (to allow the moving around of the window)
-//            if (glfwGetKey('K') != GLFW_PRESS)
-//            {
-//                glfwSetMousePos(width/2, height/2);
-//            }
-            hasMoved = 1;
+            glfwSetMousePos(width/2, height/2);
         }
+
 
         // Handle keyboard input
         if (glfwGetKey('W') == GLFW_PRESS)
@@ -157,176 +154,59 @@ int main(int argc, char **argv)
             camera.x += CAMERA_SPEED*direction.x;
             camera.y -= CAMERA_SPEED*direction.y;
             camera.z += CAMERA_SPEED*direction.z;
-            hasMoved = 1;
         }
         else if (glfwGetKey('S') == GLFW_PRESS)
         {
             camera.x -= CAMERA_SPEED*direction.x;
             camera.y += CAMERA_SPEED*direction.y;
             camera.z -= CAMERA_SPEED*direction.z;
-            hasMoved = 1;
         }
 
         if (glfwGetKey('A') == GLFW_PRESS)
         {
             camera.x += CAMERA_SPEED*direction.z;
             camera.z -= CAMERA_SPEED*direction.x;
-            hasMoved = 1;
         }
         else if (glfwGetKey('D') == GLFW_PRESS)
         {
             camera.x -= CAMERA_SPEED*direction.z;
             camera.z += CAMERA_SPEED*direction.x;
-            hasMoved = 1;
         }
 
-//        // Gravity
-//        camera.y -= GRAVITY;
-
-        i = 0;
-        if (hasMoved==1)
-        {
-            //updateview(camera, direction);
-
-            x = -MAX_SIGHT_DISTANCE;
-            while (x < MAX_SIGHT_DISTANCE)
-            {
-                if (i>=terrain.num_elements)
-                {
-                    // We need to start creating new rows
-                    allocate_new_point_array(&terrain);
-                }
-                point_row = &(terrain.array[i]);
-
-                increment_x = DISTANCE_FUNCTION(abs(x));
-
-                j = 0;
-                y = -MAX_SIGHT_WIDTH;
-                while (y < MAX_SIGHT_WIDTH)
-                {
-                    increment_y = DISTANCE_FUNCTION(abs(y));
-
-                    value = noise2d(x+camera.z, y+camera.x);
-                    tmp.z = x-camera.x;
-                    tmp.x = y-camera.y;
-                    tmp.y = value-camera.z;
-                    if (1)//(point_in_frustum(tmp, direction, FOV, MAX_SIGHT_DISTANCE, MAX_SIGHT_WIDTH/2, (MAX_SIGHT_WIDTH*height/width)/2) == 1)
-                    {
-                        // The point is visible, so remember it
-
-                        if (j >= point_row->num_elements)
-                        {
-                            // Have to create a new element in the array
-                            add_point_to_array(point_row, tmp);
-                        }
-                        else
-                        {
-                            // The room is already there, just overwrite the old value
-                            point_row->array[j++] = tmp;
-                        }
-
-                        // Add points around that specific point
-
-                        tmp.z += increment_x;
-                        if (j >= point_row->num_elements)
-                        {
-                            // Have to create a new element in the array
-                            add_point_to_array(point_row, tmp);
-                        }
-                        else
-                        {
-                            // The room is already there, just overwrite the old value
-                            point_row->array[j++] = tmp;
-                        }
-
-                        tmp.z -= increment_x;
-                        tmp.x += increment_y;
-                        if (j >= point_row->num_elements)
-                        {
-                            // Have to create a new element in the array
-                            add_point_to_array(point_row, tmp);
-                        }
-                        else
-                        {
-                            // The room is already there, just overwrite the old value
-                            point_row->array[j++] = tmp;
-                        }
-
-                        tmp.z += increment_x;
-                        if (j >= point_row->num_elements)
-                        {
-                            // Have to create a new element in the array
-                            add_point_to_array(point_row, tmp);
-                        }
-                        else
-                        {
-                            // The room is already there, just overwrite the old value
-                            point_row->array[j++] = tmp;
-                        }
-                    }
-                    y += increment_y;
-                }
-                x += increment_x;
-
-                // Forget about any extra space
-                point_row->num_elements = j;
-
-                // Only create a new row if this one was used
-                if (j != 0)
-                {
-                    i++;
-                }
-            }
-
-            // Ignore any space that wasn't used
-//            printf("\ni=%i; num=%i", i, terrain.num_elements);
-//            fflush(stdout);
-            terrain.num_elements = i;
-        }
+        updateview(camera, direction);
 
         // Render
-        render(&terrain, camera, direction);
+        render(grid, camera, direction, shader);
 
         glPopMatrix();// Restore the original coordinate system
 
         // Check if ESC key was pressed or window was closed
         running = !glfwGetKey( GLFW_KEY_ESC ) &&
         glfwGetWindowParam( GLFW_OPENED );
+
+        old_camera_pos = camera;
     }
-    // Free all the memory allocated for the terrain
-    //free_point_2d_array(&terrain); // FIXME: UNCOMMENT TO FIX MEMORY LEAKS ONCE FIXED
+    // delete it if it is not used any more
+    glDeleteLists(grid, 1);
     // Close window and terminate GLFW
     glfwTerminate();
     // Exit program
     exit( EXIT_SUCCESS );
 }
 
-void render(point_2d_array *terrain, point camera, point direction)
+void render(GLuint grid, point camera, point direction, GLuint shader_program)
 {
-    glClearColor(0.0, 0.0, 0.0, 1.0);// Fill the screen with black
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);// Reset both buffers
+    //printf("\n( %f | %f | %f )", camera.x, camera.y, camera.z);
 
-    int i, j;
-    point_array *point_row;
-    point tmp_point;
+    // Sync the camera position variable
+    GLint camera_pos_ptr;
+    camera_pos_ptr = glGetUniformLocation(shader_program, "camera_position");
+    glUniform3f(camera_pos_ptr, camera.x, camera.y, camera.z);
 
-    for (i=0; i<terrain->num_elements; i++)
-    {
-        point_row = &(terrain->array[i]);
-        glBegin(GL_TRIANGLE_STRIP);
-        glColor3f(1.0, 1.0, 1.0);
-        for (j=0; j<point_row->num_elements; j++)
-        {
-            tmp_point = point_row->array[j];
-            //printf("\n%f\t%f\t%f", tmp_point.x, tmp_point.y, tmp_point.z);
-            glVertex3f(tmp_point.x, tmp_point.y, tmp_point.z);
-        }
-        glEnd();
-    }
-
-    fflush(stdout);
-    glFlush ();
-    glfwSwapBuffers ();
+    // draw the display list
+    glCallList(grid);
+    // Swap front and back rendering buffers
+    glfwSwapBuffers();
 }
 
 void updateview(point camera, point direction)
@@ -338,6 +218,8 @@ void updateview(point camera, point direction)
 
     xrot *= 180/PI;
     yrot *= 180/PI;
+
+    //printf("\n---\n %f %f %f\n%f %f", direction.x, direction.y, direction.z, xrot, yrot);
 
     if (direction.z > 0)
     {
