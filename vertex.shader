@@ -1,5 +1,5 @@
-#define NOISE_SCALING 50.0
-#define NOISE_FREQUENCY 100.0
+#define NOISE_SCALING 500.0
+#define NOISE_FREQUENCY 500.0
 
 
 
@@ -99,7 +99,7 @@ void main()
 {
     vec4 newpos;
     newpos = gl_Vertex;
-    newpos.y = (snoise(newpos.xz / NOISE_FREQUENCY) * NOISE_SCALING) - camera_position.y;
+    newpos.y = (snoise( (newpos.xz + camera_position.xz) / NOISE_FREQUENCY) * NOISE_SCALING) - camera_position.y;
     gl_Position = gl_ModelViewProjectionMatrix * newpos;
     position = gl_Position;
 }
