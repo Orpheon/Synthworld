@@ -92,16 +92,14 @@ float snoise(vec2 v)
 
 
 
-
-uniform vec3 camera_position;
+uniform vec3 camera_position;// = vec3(0.0, 70.0, 0.0);
 varying vec4 position;
 
 void main()
 {
-    vec3 tmp;
-    tmp = gl_Vertex.xyz;
-    tmp -= camera_position;
-    gl_Vertex.y = snoise(tmp.xz / NOISE_FREQUENCY) * NOISE_SCALING;
-    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+    vec4 newpos;
+    newpos = gl_Vertex;
+    newpos.y = (snoise(newpos.xz / NOISE_FREQUENCY) * NOISE_SCALING) - camera_position.y;
+    gl_Position = gl_ModelViewProjectionMatrix * newpos;
     position = gl_Position;
 }

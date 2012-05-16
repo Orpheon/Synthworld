@@ -199,11 +199,13 @@ void render(GLuint grid, point camera, point direction, GLuint shader_program)
 
     // Sync the camera position variable
     GLint camera_pos_ptr;
+    float f[] = {camera.x, camera.y, camera.z};
     camera_pos_ptr = glGetUniformLocation(shader_program, "camera_position");
-    glUniform3f(camera_pos_ptr, camera.x, camera.y, camera.z);
+    glUniform3fv(camera_pos_ptr, 1, f);
 
     // draw the display list
     glCallList(grid);
+
     // Swap front and back rendering buffers
     glfwSwapBuffers();
 }
