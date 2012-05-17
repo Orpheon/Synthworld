@@ -12,9 +12,11 @@
 #define SCREEN_HEIGHT 1000
 #define MAP_HALFWIDTH 1000
 #define MAP_HALFLENGTH 1000
+#define MAP_HALFHEIGHT 1000
+#define VIEW_DISTANCE 1000.0
 #define CAMERA_SPEED 1
 #define TURNING_SPEED 80
-#define CAMERA_MIN_HEIGHT 5
+#define CAMERA_MIN_HEIGHT 80
 #ifndef PI
 #define PI 3.141592654f
 #endif
@@ -79,7 +81,7 @@ int main(int argc, char **argv)
     glMatrixMode (GL_PROJECTION); //set the matrix to projection
 
     glLoadIdentity ();
-    gluPerspective (60, (GLfloat)width / (GLfloat)height, 1.0, 1000.0); //set the perspective (angle of sight, width, height, depth)
+    gluPerspective (60, (GLfloat)width / (GLfloat)height, 1.0, VIEW_DISTANCE); //set the perspective (angle of sight, width, height, depth)
     glMatrixMode (GL_MODELVIEW); //set the matrix back to model
 
     glFlush();
@@ -92,17 +94,58 @@ int main(int argc, char **argv)
 
     // compile the display list, store the grid in it
     glNewList(grid, GL_COMPILE);
-        int x, z;
-        for(x=-MAP_HALFWIDTH; x<MAP_HALFWIDTH-1; x++)
+
+        GLint skybox_ptr;
+        skybox_ptr = glGetUniformLocation(shader, "isSkybox");
+        glUniform1i(skybox_ptr, 0);
+
+        // The actual grid
+        int x, y, z;
+        for (x=-MAP_HALFWIDTH; x<MAP_HALFWIDTH-1; x++)
         {
             glBegin(GL_TRIANGLE_STRIP);
-                for(z=-MAP_HALFLENGTH; z<(MAP_HALFLENGTH-1); z++)
+                for (z=-MAP_HALFLENGTH; z<(MAP_HALFLENGTH-1); z++)
                 {
                     glVertex3f(x, 0.0, -(z));
                     glVertex3f(x+1, 0.0, -(z));
                 }
             glEnd();
         }
+
+        glUniform1i(skybox_ptr, 1);
+
+        // The skybox
+
+        // The first two walls
+        for (x=-MAP_HALFWIDTH; x<=MAP_HALFWIDTH; x+=MAP_HALFWIDTH)
+        {
+            glBegin(GL_TRIANGLE_STRIP);
+                glVertex3f(x, -MAP_HALFHEIGHT, -MAP_HALFLENGTH);
+                glVertex3f(x, MAP_HALFHEIGHT, -MAP_HALFLENGTH);
+                glVertex3f(x, -MAP_HALFHEIGHT, MAP_HALFLENGTH);
+                glVertex3f(x, MAP_HALFHEIGHT, MAP_HALFLENGTH);
+            glEnd();
+        }
+
+        // The other two walls
+        for (z=-MAP_HALFLENGTH; z<=MAP_HALFLENGTH; z+=MAP_HALFLENGTH)
+        {
+            glBegin(GL_TRIANGLE_STRIP);
+                glVertex3f(-MAP_HALFWIDTH, -MAP_HALFHEIGHT, z);
+                glVertex3f(-MAP_HALFWIDTH, MAP_HALFHEIGHT, z);
+                glVertex3f(MAP_HALFWIDTH, -MAP_HALFHEIGHT, z);
+                glVertex3f(MAP_HALFWIDTH, MAP_HALFHEIGHT, z);
+            glEnd();
+        }
+
+        // Ceiling
+        glBegin(GL_TRIANGLE_STRIP);
+            glVertex3f(-MAP_HALFWIDTH, MAP_HALFHEIGHT, -MAP_HALFLENGTH);
+            glVertex3f(MAP_HALFWIDTH, MAP_HALFHEIGHT, -MAP_HALFLENGTH);
+            glVertex3f(-MAP_HALFWIDTH, MAP_HALFHEIGHT, MAP_HALFLENGTH);
+            glVertex3f(MAP_HALFWIDTH, MAP_HALFHEIGHT, MAP_HALFLENGTH);
+        glEnd();
+
     glEndList();
 
     // Main loop

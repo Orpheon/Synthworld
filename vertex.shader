@@ -1,5 +1,71 @@
-#define NOISE_SCALING 500.0
-#define NOISE_FREQUENCY 500.0
+#define NOISE_SCALING 1000.0
+#define NOISE_FREQUENCY 0.001
+#define VIEW_DISTANCE 100000.0
+
+#define FRACTAL_LACUNARITY 2.0
+#define MIN_RESOLUTION 0.01
+#define MAX_RESOLUTION 10.0
+#define MAX_DISTANCE 5656.854249
+#define FRACTAL_DIMENSION 0.3
+
+
+uniform vec3 camera_position;// = vec3(0.0, 70.0, 0.0);
+uniform int isSkybox;
+varying vec4 position;
+
+float snoise(vec2);
+float fractal_noise(vec2);
+
+
+void main()
+{
+    if (isSkybox == 1)
+    {
+        gl_Position = ftransform();
+        return;
+    }
+
+    vec4 newpos;
+    newpos = gl_Vertex;
+    newpos.y = (fractal_noise( (newpos.xz + camera_position.xz) * NOISE_FREQUENCY ) * NOISE_SCALING) - camera_position.y;
+    gl_Position = gl_ModelViewProjectionMatrix * newpos;
+    position = newpos;
+    position.xyz += camera_position;
+}
+
+
+float fractal_noise(vec2 point)
+{
+    float distance = length(point - camera_position.xz);
+    float detail, count=0.0;
+
+    if (distance <= MAX_DISTANCE)
+    {
+        detail = mix(MAX_RESOLUTION, MIN_RESOLUTION, (distance/MAX_DISTANCE));
+    }
+    else
+    {
+        detail = MIN_RESOLUTION;
+    }
+    float frequency, value = 0.0;
+
+    for (frequency=MIN_RESOLUTION; frequency<=detail && frequency<MAX_RESOLUTION; frequency*=FRACTAL_LACUNARITY)
+    {
+        value += (snoise(point*frequency));
+        count++;
+    }
+
+    if (detail > frequency)
+    {
+        float remainder = detail - frequency;
+        value += snoise(point) * remainder;
+//        count += remainder;
+    }
+
+    value /= count;
+
+    return value;
+}
 
 
 
@@ -78,28 +144,3 @@ float snoise(vec2 v)
 
 
 // END OF NOISE FUNCTION
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-uniform vec3 camera_position;// = vec3(0.0, 70.0, 0.0);
-varying vec4 position;
-
-void main()
-{
-    vec4 newpos;
-    newpos = gl_Vertex;
-    newpos.y = (snoise( (newpos.xz + camera_position.xz) / NOISE_FREQUENCY) * NOISE_SCALING) - camera_position.y;
-    gl_Position = gl_ModelViewProjectionMatrix * newpos;
-    position = gl_Position;
-}
