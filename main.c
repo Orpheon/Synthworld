@@ -1,3 +1,12 @@
+/*
+TODO:
+-More textures
+-Water
+-Fix bug that everything jumps at far distances (500, limit for noise?)
+*/
+
+
+
 #include <GL/glfw.h>
 #include <GL/glu.h>
 #include <stdlib.h>
@@ -13,10 +22,10 @@
 #define MAP_HALFWIDTH 1000
 #define MAP_HALFLENGTH 1000
 #define MAP_HALFHEIGHT 1000
-#define VIEW_DISTANCE 1000.0
-#define CAMERA_SPEED 1
+#define VIEW_DISTANCE 4000.0
+#define CAMERA_SPEED 5
 #define TURNING_SPEED 80
-#define CAMERA_MIN_HEIGHT 80
+#define CAMERA_MIN_HEIGHT 150.0
 #ifndef PI
 #define PI 3.141592654f
 #endif
@@ -241,10 +250,15 @@ void render(GLuint grid, point camera, point direction, GLuint shader_program)
     //printf("\n( %f | %f | %f )", camera.x, camera.y, camera.z);
 
     // Sync the camera position variable
-    GLint camera_pos_ptr;
+    GLint pos_ptr;
     float f[] = {camera.x, camera.y, camera.z};
-    camera_pos_ptr = glGetUniformLocation(shader_program, "camera_position");
-    glUniform3fv(camera_pos_ptr, 1, f);
+    pos_ptr = glGetUniformLocation(shader_program, "camera_position");
+    glUniform3fv(pos_ptr, 1, f);
+    f[0] = direction.x;
+    f[1] = direction.y;
+    f[2] = direction.z;
+    pos_ptr = glGetUniformLocation(shader_program, "camera_direction");
+    glUniform3fv(pos_ptr, 1, f);
 
     // draw the display list
     glCallList(grid);

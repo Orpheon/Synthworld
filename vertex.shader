@@ -37,7 +37,7 @@ void main()
 float fractal_noise(vec2 point)
 {
     float distance = length(point - camera_position.xz);
-    float detail, count=0.0;
+    float detail, count=0.0, offset;
 
     if (distance <= MAX_DISTANCE)
     {
@@ -47,11 +47,11 @@ float fractal_noise(vec2 point)
     {
         detail = MIN_RESOLUTION;
     }
-    float frequency, value = 0.0;
+    float frequency, value = 1.0;
 
     for (frequency=MIN_RESOLUTION; frequency<=detail && frequency<MAX_RESOLUTION; frequency*=FRACTAL_LACUNARITY)
     {
-        value += (snoise(point*frequency));
+        value += snoise(point*frequency);
         count++;
     }
 
@@ -66,8 +66,6 @@ float fractal_noise(vec2 point)
 
     return value;
 }
-
-
 
 // START OF NOISE FUNCTION
 
@@ -141,6 +139,5 @@ float snoise(vec2 v)
   g.yz = a0.yz * x12.xz + h.yz * x12.yw;
   return 130.0 * dot(m, g);
 }
-
 
 // END OF NOISE FUNCTION

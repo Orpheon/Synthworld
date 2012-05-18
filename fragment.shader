@@ -19,10 +19,15 @@
 #define RED vec4(1.0, 0.0, 0.0, 1.0)
 #define GREEN vec4(0.0, 1.0, 0.0, 1.0)
 #define BLUE vec4(0.0, 0.0, 1.0, 1.0)
+#define SKYCOLOR vec4(0.8, 0.8, 0.9, 1.0)
+
+#define PI 3.141592653589793
 
 #define ease_curve(a) (a*a*( 3.0 - 2.0*a ))
+#define bias(a, b) (pow(a, log(b)/log(0.5)))
 
 uniform vec3 camera_position;
+uniform vec3 camera_direction;
 uniform int isSkybox;
 varying vec4 position;
 
@@ -34,7 +39,7 @@ void main( void )
 {
     if (isSkybox == 1)
     {
-        gl_FragColor = RED;
+        gl_FragColor = SKYCOLOR;
         return;
     }
 
@@ -55,14 +60,15 @@ void main( void )
     float a = distance / FOG_OPACITY_DISTANCE;
     if (a > 1.0)
     {
-        gl_FragColor = WHITE;
+        gl_FragColor = SKYCOLOR;
     }
     else
     {
-        gl_FragColor = mix(gl_FragColor, LIGHT_GRAY, (a + noise/10.0));
+        gl_FragColor = mix(gl_FragColor, SKYCOLOR, min(1.0, bias(0.3, a + noise)));
     }
 
 }
+
 
 float fractal_noise(vec3 point, float distance)
 {
