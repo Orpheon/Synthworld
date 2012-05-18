@@ -252,8 +252,7 @@ void render(GLuint grid, point camera, point direction, GLuint shader_program)
     glUniform3fv(pos_ptr, 1, f);
     f[0] = (float)clock()*2.0/(float)CLOCKS_PER_SEC;
     pos_ptr = glGetUniformLocation(shader_program, "time");
-    glUniform1f(pos_ptr, 1, f);
-    glUniform1f(pos_ptr, 1, f);
+    glUniform1fv(pos_ptr, 1, f);
 
     // draw the display list
     glCallList(grid);

@@ -7,7 +7,7 @@
 #define GREEN_LIMIT_HEIGHT 50.0
 #define SNOW_LINE_HEIGHT 150.0
 
-#define FRACTAL_LACUNARITY 1.9786
+#define FRACTAL_LACUNARITY 1.97866
 #define MIN_RESOLUTION 0.01
 #define MAX_RESOLUTION 10.0
 #define MAX_DISTANCE 5656.854249
@@ -57,7 +57,9 @@ void main( void )
 
     if (position.y <= WATER_HEIGHT)
     {
-        gl_FragColor = mix(BLUE, SKYCOLOR, fractal_noise(vec3(position.x, time, position.z), MAX_DISTANCE));
+        vec4 color = mix(BLUE, SKYCOLOR, bias(0.3, fractal_noise(vec3(position.x, time, position.z), 1.0)/2.0 + 0.5));
+        color_top = color;// Calculating it only once for speed
+        color_bottom = color;
     }
     else if (ypos < GREEN_LIMIT_HEIGHT)
     {
@@ -97,7 +99,7 @@ void main( void )
     }
     else
     {
-        gl_FragColor = mix(gl_FragColor, SKYCOLOR, min(1.0, bias(0.3, a + fractal_noise(vec3(position.x, time, position.z), distance)/2.0 + 0.5)));
+        gl_FragColor = mix(gl_FragColor, SKYCOLOR, min(1.0, bias(0.3, a + noise)));
     }
 
 }
