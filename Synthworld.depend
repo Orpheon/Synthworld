@@ -1,0 +1,27 @@
+# depslib dependency file v1.0
+1337368782 source:/home/alexander/Programming/C/Terrain Rendering Try 4/geometry.c
+	"geometry.h"
+
+1337368782 /home/alexander/Programming/C/Terrain Rendering Try 4/geometry.h
+
+1337368995 source:/home/alexander/Programming/C/Terrain Rendering Try 4/main.c
+	<GL/glfw.h>
+	<GL/glu.h>
+	<stdlib.h>
+	<time.h>
+	<stdio.h>
+	<math.h>
+	"geometry.h"
+	"shaders.h"
+
+1337368831 /home/alexander/Programming/C/Terrain Rendering Try 4/shaders.h
+	"shaders.c"
+	<GL/glu.h>
+
+1337368782 /home/alexander/Programming/C/Terrain Rendering Try 4/shaders.c
+	"shaders.h"
+	<GL/glfw.h>
+	<GL/glu.h>
+	<stdlib.h>
+	<stdio.h>
+

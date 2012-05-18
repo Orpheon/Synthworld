@@ -1,14 +1,8 @@
-/*
-TODO:
--More textures
--Water
--Fix bug that everything jumps at far distances (500, limit for noise?)
-*/
-
 #include <GL/glew.h>
 #include <GL/glfw.h>
 #include <GL/glu.h>
 #include <stdlib.h>
+#include <time.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -16,7 +10,6 @@ TODO:
 #include "shaders.h"
 
 #define length_of_vector(a) sqrt(a.x*a.x + a.y*a.y + a.z*a.z)
-
 #define SCREEN_WIDTH 1600
 #define SCREEN_HEIGHT 1000
 #define MAP_HALFWIDTH 1000
@@ -36,7 +29,7 @@ void updateview(point camera, point direction);
 int main(int argc, char **argv)
 {
     int i, j;
-    float length, mouse_x, mouse_y;
+    float length, mouse_x, mouse_y, time;
 
     point camera, direction, old_camera_pos, tmp;
     // The theoretical camera position
@@ -259,6 +252,10 @@ void render(GLuint grid, point camera, point direction, GLuint shader_program)
     f[2] = direction.z;
     pos_ptr = glGetUniformLocation(shader_program, "camera_direction");
     glUniform3fv(pos_ptr, 1, f);
+    f[0] = (float)clock()*2.0/(float)CLOCKS_PER_SEC;
+    pos_ptr = glGetUniformLocation(shader_program, "time");
+    glUniform1f(pos_ptr, 1, f);
+    glUniform1f(pos_ptr, 1, f);
 
     // draw the display list
     glCallList(grid);

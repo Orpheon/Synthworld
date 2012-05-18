@@ -3,10 +3,11 @@
 #define ZONE_SCALING 400.0
 
 #define FOG_OPACITY_DISTANCE 2500.0
+#define WATER_HEIGHT 0.0
 #define GREEN_LIMIT_HEIGHT 50.0
 #define SNOW_LINE_HEIGHT 150.0
 
-#define FRACTAL_LACUNARITY 2.0
+#define FRACTAL_LACUNARITY 1.9786
 #define MIN_RESOLUTION 0.01
 #define MAX_RESOLUTION 10.0
 #define MAX_DISTANCE 5656.854249
@@ -31,12 +32,13 @@
 
 uniform vec3 camera_position;
 uniform vec3 camera_direction;
+uniform float time;
 uniform int isSkybox;
 varying vec4 position;
+varying vec3 point_normal;
 
 float snoise(vec3);
 float fractal_noise(vec3, float);
-
 
 void main( void )
 {
@@ -53,7 +55,11 @@ void main( void )
     vec4 color_top, color_bottom;
     float ypos = position.y + (2.0*noise - 1.0) * ZONE_SCALING;
 
-    if (ypos < GREEN_LIMIT_HEIGHT)
+    if (position.y <= WATER_HEIGHT)
+    {
+        gl_FragColor = mix(BLUE, SKYCOLOR, fractal_noise(vec3(position.x, time, position.z), MAX_DISTANCE));
+    }
+    else if (ypos < GREEN_LIMIT_HEIGHT)
     {
         if (noise > 0.5)
         {
@@ -80,7 +86,7 @@ void main( void )
     gl_FragColor = mix(color_top, color_bottom, noise);
 
     // Shading approx.
-    float height = position.y + (NOISE_SCALING)/2.0;
+    float height = point_normal.y + (NOISE_SCALING)/2.0;
     gl_FragColor = max(gl_FragColor + mix(vec4(-0.2, -0.2, -0.2, 1.0), vec4(0.0, 0.0, 0.0, 1.0), height/(NOISE_SCALING)), 0.0 );
 
     // Fog
@@ -91,7 +97,7 @@ void main( void )
     }
     else
     {
-        gl_FragColor = mix(gl_FragColor, SKYCOLOR, min(1.0, bias(0.3, a + noise)));
+        gl_FragColor = mix(gl_FragColor, SKYCOLOR, min(1.0, bias(0.3, a + fractal_noise(vec3(position.x, time, position.z), distance)/2.0 + 0.5)));
     }
 
 }
@@ -129,7 +135,6 @@ float fractal_noise(vec3 point, float distance)
     return value;
 }
 
-
 // BEGIN OF NOISE FUNCTION, NOT MADE BY ME
 
 //
@@ -142,6 +147,7 @@ float fractal_noise(vec3 point, float distance)
 // Distributed under the MIT License. See LICENSE file.
 // https://github.com/ashima/webgl-noise
 //
+
 
 vec3 mod289(vec3 x) {
   return x - floor(x * (1.0 / 289.0)) * 289.0;

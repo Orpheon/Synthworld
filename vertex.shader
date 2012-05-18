@@ -2,6 +2,8 @@
 #define NOISE_FREQUENCY 0.001
 #define VIEW_DISTANCE 100000.0
 
+#define WATER_HEIGHT -camera_position.y
+
 #ifndef PI
 #define PI 3.141592654
 #endif
@@ -15,12 +17,13 @@
 
 uniform vec3 camera_position;
 uniform vec3 camera_direction;
+uniform float time;
 uniform int isSkybox;
 varying vec4 position;
+varying vec3 point_normal;
 
 float snoise(vec2);
 float fractal_noise(vec2);
-
 
 void main()
 {
@@ -34,14 +37,30 @@ void main()
     vec4 newpos;
     newpos = gl_Vertex;
 
-    newpos.y = (fractal_noise( (newpos.xz + camera_position.xz) * NOISE_FREQUENCY ) * NOISE_SCALING) - camera_position.y;
+    // Calculating the normal of this vertex
+    vec2 point = (newpos.xz + camera_position.xz) * NOISE_FREQUENCY;
+//    vec3 point1 = vec3(point.x, 0.0, point.y - 1.0),
+//         point2 = vec3(point.x - 0.5, 0.0, point.y - 0.866025404), // <-- Equilateral triangle; 0.866025404 = cos(PI/6.0)
+//         point3 = vec3(point.x + 0.5, 0.0, point.y - 0.866025404);
+
+    newpos.y = fractal_noise(point) * NOISE_SCALING - camera_position.y;
+
+//    point1.y = fractal_noise(point1.xz);
+//    point2.y = fractal_noise(point2.xz);
+//    point3.y = fractal_noise(point3.xz);
+//
+//    point_normal = normalize( cross( point2-point1, point3-point1 ) );// Used for lighting in the frag shader
+
+    if (newpos.y <= WATER_HEIGHT)
+    {
+        newpos.y = WATER_HEIGHT;
+    }
 
     gl_Position = gl_ModelViewProjectionMatrix * newpos;
 
     position = newpos;
     position.xyz += camera_position;
 }
-
 
 float fractal_noise(vec2 point)
 {
