@@ -29,16 +29,13 @@ void updateview(point camera, point direction);
 int main(int argc, char **argv)
 {
     int i, j;
-    float length, mouse_x, mouse_y, time;
+    float length, mouse_x, mouse_y;
 
-    point camera, direction, old_camera_pos, tmp;
+    point camera, direction, tmp;
     // The theoretical camera position
     camera.x = 0.0;
     camera.y = CAMERA_MIN_HEIGHT;
     camera.z = 0.0;
-
-    // The camera position a frame ago (used for detecting and calculating movement)
-    old_camera_pos = camera;
 
     // A unit vector, which is the direction we're pointing at
     direction.x = 0.25f;
@@ -102,7 +99,7 @@ int main(int argc, char **argv)
         glUniform1i(skybox_ptr, 0);
 
         // The actual grid
-        int x, y, z;
+        int x, z;
         for (x=-MAP_HALFWIDTH; x<MAP_HALFWIDTH-1; x++)
         {
             glBegin(GL_TRIANGLE_STRIP);
@@ -227,8 +224,6 @@ int main(int argc, char **argv)
         // Check if ESC key was pressed or window was closed
         running = !glfwGetKey( GLFW_KEY_ESC ) &&
         glfwGetWindowParam( GLFW_OPENED );
-
-        old_camera_pos = camera;
     }
     // delete it if it is not used any more
     glDeleteLists(grid, 1);
