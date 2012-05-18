@@ -1,3 +1,5 @@
+#include "shaders.h"
+
 #include <GL/glfw.h>
 #include <GL/glu.h>
 #include <stdlib.h>
