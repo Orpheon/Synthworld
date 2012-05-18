@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     // A unit vector, which is the direction we're pointing at
     direction.x = 0.25f;
     direction.y = 0.0f;
-    direction.z = -0.25;
+    direction.z = -0.25f;
 
     // Normalize direction
     normalize(&direction);
@@ -121,9 +121,9 @@ int main(int argc, char **argv)
             glEnd();
         }
 
-        glUniform1i(skybox_ptr, 1);
-
         // The skybox
+
+        glUniform1i(skybox_ptr, 1);
 
         // The first two walls
         for (x=-MAP_HALFWIDTH; x<=MAP_HALFWIDTH; x+=MAP_HALFWIDTH)
@@ -187,7 +187,7 @@ int main(int argc, char **argv)
         direction.z += tmp.z;
         // Change the direction vector along the y plane
         direction.y += sin(PI*TURNING_SPEED*mouse_y/360);
-        //printf("\n %f %f %f", mouse_y, direction.y, direction.z);
+        //printf("\n %f %f %f", direction.x, direction.y, direction.z);
 
         // Normalize the direction vector again
         normalize(&direction);

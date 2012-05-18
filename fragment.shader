@@ -1,7 +1,10 @@
 #define NUMBER_OF_PATCHES vec2(1.0)
 #define NOISE_SCALING 200.0
+#define ZONE_SCALING 400.0
 
-#define FOG_OPACITY_DISTANCE 1000.0
+#define FOG_OPACITY_DISTANCE 2500.0
+#define GREEN_LIMIT_HEIGHT 50.0
+#define SNOW_LINE_HEIGHT 150.0
 
 #define FRACTAL_LACUNARITY 2.0
 #define MIN_RESOLUTION 0.01
@@ -48,8 +51,32 @@ void main( void )
     noise = noise/2.0 + 0.5;// Get the noise in the range 0..1
 
     vec4 color_top, color_bottom;
-    color_top = mix(DARK_BROWN, GRAY, noise);
-    color_bottom = mix(DARK_GRAY, LIGHT_BROWN, noise);
+    float ypos = position.y + (2.0*noise - 1.0) * ZONE_SCALING;
+
+    if (ypos < GREEN_LIMIT_HEIGHT)
+    {
+        if (noise > 0.5)
+        {
+            color_top = mix(DARK_BROWN, GREEN, noise);
+            color_bottom = mix(GREEN, LIGHT_BROWN, noise);
+        }
+        else
+        {
+            color_top = mix(DARK_BROWN, GRAY, noise);
+            color_bottom = mix(DARK_GRAY, LIGHT_BROWN, noise);
+        }
+    }
+    else if (ypos > SNOW_LINE_HEIGHT)
+    {
+        color_top = mix(WHITE, GRAY, noise);
+        color_bottom = mix(DARK_GRAY, DARK_BROWN, noise);
+    }
+    else
+    {
+        color_top = mix(DARK_BROWN, GRAY, noise);
+        color_bottom = mix(DARK_GRAY, LIGHT_BROWN, noise);
+    }
+
     gl_FragColor = mix(color_top, color_bottom, noise);
 
     // Shading approx.
@@ -57,7 +84,7 @@ void main( void )
     gl_FragColor = max(gl_FragColor + mix(vec4(-0.2, -0.2, -0.2, 1.0), vec4(0.0, 0.0, 0.0, 1.0), height/(NOISE_SCALING)), 0.0 );
 
     // Fog
-    float a = distance / FOG_OPACITY_DISTANCE;
+    float a = (distance + (NOISE_SCALING - ypos)*2.0) / FOG_OPACITY_DISTANCE;
     if (a > 1.0)
     {
         gl_FragColor = SKYCOLOR;
