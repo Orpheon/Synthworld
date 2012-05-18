@@ -1,7 +1,7 @@
 #ifndef _SHADERS_H
 #define _SHADERS_H
 
-#include <GL/glu.h>
+#include <GL/gl.h>
 
 void printShaderInfoLog(GLuint obj);
 GLuint createShaders();

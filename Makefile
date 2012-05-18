@@ -1,2 +1,2 @@
 synthworld: main.c shaders.c shaders.h geometry.c geometry.h
-	gcc *.c -o synthworld -lGL -lGLU -lGLEW -lglfw
+	gcc *.c -Wall -O -o synthworld -lGL -lGLU -lGLEW -lglfw

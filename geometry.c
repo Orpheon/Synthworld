@@ -1,5 +1,7 @@
 #include "geometry.h"
 
+#include <math.h>
+
 void normalize(point *a)
 {
     float length;

@@ -5,13 +5,13 @@ TODO:
 -Fix bug that everything jumps at far distances (500, limit for noise?)
 */
 
-
-
+#include <GL/gl.h>
 #include <GL/glfw.h>
 #include <GL/glu.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+
 #include "geometry.h"
 #include "shaders.h"
 
