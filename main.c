@@ -25,7 +25,8 @@ TODO:
 #define MAP_HALFWIDTH 1000
 #define MAP_HALFLENGTH 1000
 #define MAP_HALFHEIGHT 1000
-#define VIEW_DISTANCE 4000.0
+#define VIEW_DISTANCE (MAP_HALFWIDTH * 2.0)
+#define FOV 60.0
 #define CAMERA_SPEED 5
 #define TURNING_SPEED 80
 #define CAMERA_MIN_HEIGHT 150.0
@@ -93,7 +94,7 @@ int main(int argc, char **argv)
     glMatrixMode (GL_PROJECTION); //set the matrix to projection
 
     glLoadIdentity ();
-    gluPerspective (60, (GLfloat)width / (GLfloat)height, 1.0, VIEW_DISTANCE); //set the perspective (angle of sight, width, height, depth)
+    gluPerspective (FOV, (GLfloat)width / (GLfloat)height, 1.0, VIEW_DISTANCE); //set the perspective (angle of sight, width, height, depth)
     glMatrixMode (GL_MODELVIEW); //set the matrix back to model
 
     glFlush();
@@ -257,14 +258,31 @@ void render(GLuint grid, point camera, point direction, GLuint shader_program)
     float f[] = {camera.x, camera.y, camera.z};
     pos_ptr = glGetUniformLocation(shader_program, "camera_position");
     glUniform3fv(pos_ptr, 1, f);
-    f[0] = direction.x;
-    f[1] = direction.y;
-    f[2] = direction.z;
-    pos_ptr = glGetUniformLocation(shader_program, "camera_direction");
-    glUniform3fv(pos_ptr, 1, f);
+
+    // Sync the time
     f[0] = (float)clock()*2.0/(float)CLOCKS_PER_SEC;
     pos_ptr = glGetUniformLocation(shader_program, "time");
     glUniform1fv(pos_ptr, 1, f);
+
+    // Sync the rotation matrices
+    // And calculate them first
+
+    // Standard rotation around y-axis
+    float length = sqrt(1-(direction.y*direction.y));
+    float phi = asin(direction.x/length);
+    if (direction.z > 0.0)
+    {
+        phi = PI - phi;
+    }
+    if (phi < 0.0)
+    {
+        phi = 2*PI + phi;
+    }
+    printf("\n%f", phi * 180/PI);
+    float mat[] = { cos(phi), 0.0, -sin(phi), 0.0, 1.0, 0.0, sin(phi), 0.0, cos(phi) };
+    pos_ptr = glGetUniformLocation(shader_program, "xz_rotation_matrix");
+    glUniformMatrix3fv(pos_ptr, 1, 0, mat);
+
 
     // draw the display list
     glCallList(grid);
@@ -290,7 +308,7 @@ void updateview(point camera, point direction)
         xrot = 180-xrot;
     }
 
-    glRotatef(xrot, 0.0, 1.0, 0.0);
-    glRotatef(yrot, -direction.z, 0.0, direction.x);
+    //glRotatef(xrot, 0.0, 1.0, 0.0);
+    //glRotatef(yrot, -direction.z, 0.0, direction.x);
     //glTranslated(-camera.x, -camera.y, -camera.z);
 }

@@ -31,8 +31,8 @@
 #define bias(a, b) (pow(a, log(b)/log(0.5)))
 
 uniform vec3 camera_position;
-uniform vec3 camera_direction;
 uniform float time;
+uniform mat3 xz_rotation_matrix;
 uniform int isSkybox;
 varying vec4 position;
 varying vec3 point_normal;

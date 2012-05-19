@@ -1,4 +1,4 @@
-#define NOISE_SCALING 20.0
+#define NOISE_SCALING 0.0002
 #define NOISE_FREQUENCY 0.001
 #define VIEW_DISTANCE 100000.0
 
@@ -13,11 +13,11 @@
 #define MAX_RESOLUTION 10.0
 #define MAX_DISTANCE 5656.854249
 #define FRACTAL_DIMENSION 1.0
-
+#define FRACTAL_OFFSET 0.5
 
 uniform vec3 camera_position;
-uniform vec3 camera_direction;
 uniform float time;
+uniform mat3 xz_rotation_matrix;
 uniform int isSkybox;
 varying vec4 position;
 varying vec3 point_normal;
@@ -36,6 +36,7 @@ void main()
 
     vec4 newpos;
     newpos = gl_Vertex;
+    newpos.xyz *= xz_rotation_matrix;
 
     // Calculating the normal of this vertex
     vec2 point = (newpos.xz + camera_position.xz) * NOISE_FREQUENCY;
@@ -65,41 +66,26 @@ void main()
 
 float fractal_noise(vec2 point)
 {
-    float distance = length(point - camera_position.xz);
-    float detail, count=0.0, offset;
-
-    if (distance <= MAX_DISTANCE)
-    {
-        detail = mix(MAX_RESOLUTION, MIN_RESOLUTION, (distance/MAX_DISTANCE));
-    }
-    else
-    {
-        detail = MIN_RESOLUTION;
-    }
     float frequency, value = 1.0, increment;
 
     // the first unscaled octave
     value = snoise(point) * pow(MIN_RESOLUTION, -FRACTAL_DIMENSION);
     point *= FRACTAL_LACUNARITY;
 
-    for (frequency=MIN_RESOLUTION*FRACTAL_LACUNARITY; frequency<=detail && frequency<MAX_RESOLUTION; frequency*=FRACTAL_LACUNARITY)
+    for (frequency=MIN_RESOLUTION*FRACTAL_LACUNARITY; frequency<MAX_RESOLUTION; frequency*=FRACTAL_LACUNARITY)
     {
         increment = (snoise(point)/2.0 + 0.5) * pow(frequency, -FRACTAL_DIMENSION);
-        increment *= value / 10.0;
+        increment *= FRACTAL_OFFSET;
+        increment *= value;
         value += increment;
         point *= FRACTAL_LACUNARITY;
-        count++;
     }
 
-    if (detail > frequency)
+    if (MAX_RESOLUTION > frequency)
     {
-        float remainder = detail - frequency;
-        value += snoise(point) * remainder / detail;
-//        count += remainder / detail;
+        float remainder = MAX_RESOLUTION - frequency;
+        value += snoise(point) * remainder;
     }
-
-    value /= 133.08146286095143;
-
     return value;
 }
 
