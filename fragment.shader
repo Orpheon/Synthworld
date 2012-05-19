@@ -2,7 +2,7 @@
 #define NOISE_SCALING 200.0
 #define ZONE_SCALING 400.0
 
-#define FOG_OPACITY_DISTANCE 2500.0
+#define FOG_OPACITY_DISTANCE 2000.0
 #define WATER_HEIGHT 0.0
 #define GREEN_LIMIT_HEIGHT 50.0
 #define SNOW_LINE_HEIGHT 150.0
@@ -93,6 +93,7 @@ void main( void )
 
     // Fog
     float a = (distance + (NOISE_SCALING - ypos)*2.0) / FOG_OPACITY_DISTANCE;
+
     if (a > 1.0)
     {
         gl_FragColor = SKYCOLOR;

@@ -1,4 +1,4 @@
-#define NOISE_SCALING 1000.0
+#define NOISE_SCALING 20.0
 #define NOISE_FREQUENCY 0.001
 #define VIEW_DISTANCE 100000.0
 
@@ -12,7 +12,7 @@
 #define MIN_RESOLUTION 0.01
 #define MAX_RESOLUTION 10.0
 #define MAX_DISTANCE 5656.854249
-#define FRACTAL_DIMENSION 5.0
+#define FRACTAL_DIMENSION 1.0
 
 
 uniform vec3 camera_position;
@@ -62,6 +62,7 @@ void main()
     position.xyz += camera_position;
 }
 
+
 float fractal_noise(vec2 point)
 {
     float distance = length(point - camera_position.xz);
@@ -75,25 +76,68 @@ float fractal_noise(vec2 point)
     {
         detail = MIN_RESOLUTION;
     }
-    float frequency, value = 1.0;
+    float frequency, value = 1.0, increment;
 
-    for (frequency=MIN_RESOLUTION; frequency<=detail && frequency<MAX_RESOLUTION; frequency*=FRACTAL_LACUNARITY)
+    // the first unscaled octave
+    value = snoise(point) * pow(MIN_RESOLUTION, -FRACTAL_DIMENSION);
+    point *= FRACTAL_LACUNARITY;
+
+    for (frequency=MIN_RESOLUTION*FRACTAL_LACUNARITY; frequency<=detail && frequency<MAX_RESOLUTION; frequency*=FRACTAL_LACUNARITY)
     {
-        value += snoise(point*frequency);
+        increment = (snoise(point)/2.0 + 0.5) * pow(frequency, -FRACTAL_DIMENSION);
+        increment *= value / 10.0;
+        value += increment;
+        point *= FRACTAL_LACUNARITY;
         count++;
     }
 
     if (detail > frequency)
     {
         float remainder = detail - frequency;
-        value += snoise(point) * remainder;
-//        count += remainder;
+        value += snoise(point) * remainder / detail;
+//        count += remainder / detail;
     }
 
-    value /= count;
+    value /= 133.08146286095143;
 
     return value;
 }
+
+// STANDARD fBm
+
+//float fractal_noise(vec2 point)
+//{
+//    float distance = length(point - camera_position.xz);
+//    float detail, count=0.0, offset;
+//
+//    if (distance <= MAX_DISTANCE)
+//    {
+//        detail = mix(MAX_RESOLUTION, MIN_RESOLUTION, (distance/MAX_DISTANCE));
+//    }
+//    else
+//    {
+//        detail = MIN_RESOLUTION;
+//    }
+//    float frequency, value = 1.0;
+//
+//    for (frequency=MIN_RESOLUTION; frequency<=detail && frequency<MAX_RESOLUTION; frequency*=FRACTAL_LACUNARITY)
+//    {
+//        value += snoise(point) * pow(frequency, -FRACTAL_DIMENSION);
+//        point *= FRACTAL_LACUNARITY;
+//        count++;
+//    }
+//
+//    if (detail > frequency)
+//    {
+//        float remainder = detail - frequency;
+//        value += snoise(point) * remainder / detail;
+////        count += remainder / detail;
+//    }
+//
+////    value /= count;
+//
+//    return value;
+//}
 
 // START OF NOISE FUNCTION
 

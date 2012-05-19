@@ -1,3 +1,15 @@
+/*
+TODO:
+-Make grid a good LOD, fixing swimming and also maybe allowing less fog.
+-MOAR TEXTURES
+-/Maybe/ try AJF's stuff again
+-Moving fog?
+-rotation in shader --> grid size /= 6
+-real velocity, not fps camera
+-airplane model? :P
+-find a solution for collision
+*/
+
 #include <GL/glfw.h>
 #include <GL/glu.h>
 #include <stdlib.h>
