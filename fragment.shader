@@ -32,7 +32,7 @@
 
 uniform vec3 camera_position;
 uniform float time;
-uniform mat3 xz_rotation_matrix;
+uniform mat4 xz_rotation_matrix;
 uniform int isSkybox;
 varying vec4 position;
 varying vec3 point_normal;

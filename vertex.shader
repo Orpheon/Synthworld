@@ -17,7 +17,7 @@
 
 uniform vec3 camera_position;
 uniform float time;
-uniform mat3 xz_rotation_matrix;
+uniform mat4 xz_rotation_matrix;
 uniform int isSkybox;
 varying vec4 position;
 varying vec3 point_normal;
@@ -36,7 +36,7 @@ void main()
 
     vec4 newpos;
     newpos = gl_Vertex;
-    newpos.xyz *= xz_rotation_matrix;
+    newpos = xz_rotation_matrix * newpos;
 
     // Calculating the normal of this vertex
     vec2 point = (newpos.xz + camera_position.xz) * NOISE_FREQUENCY;
@@ -57,7 +57,7 @@ void main()
         newpos.y = WATER_HEIGHT;
     }
 
-    gl_Position = gl_ModelViewProjectionMatrix * newpos;
+    gl_Position = gl_ModelViewProjectionMatrix * vec4(gl_Vertex.x, newpos.y, gl_Vertex.zw);
 
     position = newpos;
     position.xyz += camera_position;

@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     // A unit vector, which is the direction we're pointing at
     direction.x = 0.25f;
     direction.y = 0.0f;
-    direction.z = -0.25f;
+    direction.z = 0.25f;
 
     // Normalize direction
     normalize(&direction);
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
         for (x=-MAP_HALFWIDTH; x<MAP_HALFWIDTH-1; x++)
         {
             glBegin(GL_TRIANGLE_STRIP);
-                for (z=-MAP_HALFLENGTH; z<(MAP_HALFLENGTH-1); z++)
+                for (z=0.0; z<2.0*MAP_HALFLENGTH; z++)
                 {
                     glVertex3f(x, 0.0, -(z));
                     glVertex3f(x+1, 0.0, -(z));
@@ -228,7 +228,7 @@ int main(int argc, char **argv)
             camera.z += CAMERA_SPEED*direction.x;
         }
 
-        updateview(camera, direction);
+        //updateview(camera, direction);
 
         // Render
         render(grid, camera, direction, shader);
@@ -279,9 +279,12 @@ void render(GLuint grid, point camera, point direction, GLuint shader_program)
         phi = 2*PI + phi;
     }
     printf("\n%f", phi * 180/PI);
-    float mat[] = { cos(phi), 0.0, -sin(phi), 0.0, 1.0, 0.0, sin(phi), 0.0, cos(phi) };
+    float mat[] = { cos(phi),  0.0,   sin(phi), 0.0,// column 1   | should be a rotation matrix that rotates around the y axis
+                     0.0,       1.0,   0.0,      0.0,// column 2
+                     -sin(phi), 0.0,   cos(phi), 0.0,// etc...
+                     0.0,       0.0,   0.0,      1.0 };
     pos_ptr = glGetUniformLocation(shader_program, "xz_rotation_matrix");
-    glUniformMatrix3fv(pos_ptr, 1, 0, mat);
+    glUniformMatrix4fv(pos_ptr, 1, 0, mat);
 
 
     // draw the display list
@@ -308,7 +311,7 @@ void updateview(point camera, point direction)
         xrot = 180-xrot;
     }
 
-    //glRotatef(xrot, 0.0, 1.0, 0.0);
-    //glRotatef(yrot, -direction.z, 0.0, direction.x);
+    glRotatef(xrot, 0.0, 1.0, 0.0);
+    glRotatef(yrot, -direction.z, 0.0, direction.x);
     //glTranslated(-camera.x, -camera.y, -camera.z);
 }
